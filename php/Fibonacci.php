@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace FibonacciService;
 
+use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerInterface;
-use OpenTelemetry\API\Trace\SpanInterface;
-use OpenTelemetry\Context\Context;
 
 class Fibonacci
 {
@@ -14,39 +13,39 @@ class Fibonacci
     {
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function calculate(int $n): int
     {
-        $span = $this->tracer->spanBuilder("Fibonacci($n)")
-            ->startSpan();
-        $scope = $span->activate();
-
-        try {
-            $result = $this->fibonacciRecursive($n);
-            $span->setAttribute('n', $n);
-            $span->setAttribute('result', $result);
-            return $result;
-        } finally {
-            $scope->detach();
-            $span->end();
+        if ($n < 0) {
+            throw new \InvalidArgumentException("Input n must be non-negative.");
         }
+
+        return $this->calculateRecursive($n);
     }
 
-    private function fibonacciRecursive(int $n): int
+    private function calculateRecursive(int $n): int
     {
-        $span = $this->tracer->spanBuilder("fibonacciRecursive($n)")->startSpan();
+        $span = $this->tracer->spanBuilder("Fibonacci::recursive(n=$n)")
+            ->startSpan();
         $scope = $span->activate();
 
         try {
             if ($n <= 1) {
                 $result = 1;
             } else {
-                $a = $this->fibonacciRecursive($n - 1);
-                $b = $this->fibonacciRecursive($n - 2);
-                $result = $a + $b;
+                $result = $this->calculateRecursive($n - 1) + $this->calculateRecursive($n - 2);
             }
-            $span->setAttribute('n', $n);
+
+            $span->setAttribute('parameter.n', $n);
             $span->setAttribute('result', $result);
             return $result;
+
+        } catch (\Throwable $e) {
+            $span->recordException($e);
+            $span->setStatus(StatusCode::STATUS_ERROR, $e->getMessage());
+            throw $e;
         } finally {
             $scope->detach();
             $span->end();
