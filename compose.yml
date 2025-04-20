@@ -1,0 +1,44 @@
+services:
+  app-go:
+    build:
+      context: ./go
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - jaeger
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  app-php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - jaeger
+    env_file:
+      - .env
+    environment:
+      - OTEL_SERVICE_NAME=fibonacci-php
+    networks:
+      - app-network
+    volumes:
+      - ./php:/app
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.68.0
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
