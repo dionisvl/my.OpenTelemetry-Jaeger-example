@@ -2,6 +2,7 @@
   "name": "fibonacci-service/php",
   "description": "Fibonacci Service with OpenTelemetry integration",
   "type": "project",
+  "license": "MIT",
   "require": {
     "php": ">=8.0",
     "open-telemetry/api": "^1.0",
