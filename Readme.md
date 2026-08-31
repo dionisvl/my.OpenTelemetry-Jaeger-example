@@ -5,6 +5,7 @@ that generates traces spans and sends them to Jaeger.
 
 
 ## Installation
+- `cp .env.example .env`
 - `docker compose up --build`
 
 ## PHP
